@@ -1,33 +1,39 @@
 import { Link } from 'react-router-dom'
-import { CarFront, KeyRound, MapPin } from 'lucide-react'
-import { dinero } from '../utils/formato.js'
+import { dinero } from '../utils/formato'
 
-export default function TarjetaVehiculo({ vehiculo: v }) {
+export default function TarjetaVehiculo({ v }) {
   return (
-    <article className="overflow-hidden rounded-xl border border-borde bg-superficie transition hover:-translate-y-1 hover:border-marca/60">
-      <div className="relative grid aspect-[4/3] place-items-center bg-linear-to-br from-borde to-fondo">
-        <CarFront className="size-16 text-marca-claro/70" />
-        {v.pruebaDomicilio && (
-          <span className="absolute bottom-3 left-3 flex items-center rounded-full bg-fondo/90 px-2.5 py-1 text-[11px] font-semibold">
-            <KeyRound className="mr-1 size-3 text-marca-claro" />
-            Prueba a domicilio
-          </span>
-        )}
-      </div>
-      <div className="p-4">
-        <p className="text-xs font-semibold text-suave">{v.anio} · {v.estado}</p>
-        <h3 className="mt-1 text-lg font-bold">{v.nombre}</h3>
-        <p className="mt-2 text-xl font-extrabold text-marca-claro">{dinero(v.precio)}</p>
-        <p className="mt-2 flex items-center text-xs text-suave">
-          <MapPin className="mr-1 size-3.5" />
-          {v.ubicacion} · {v.kilometraje}
+    <article className="overflow-hidden rounded-xl border border-borde bg-superficie">
+      <img src={v.image} alt={v.name} className="h-44 w-full object-cover" />
+      <div className="space-y-2 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-texto">{v.name}</h3>
+          {v.badge && (
+            <span className="rounded-full bg-marca/20 px-2 py-0.5 text-xs text-marca-claro">
+              {v.badge}
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-suave">
+          {v.year} · {v.condition} · {v.location}
         </p>
-        <Link
-          to="/vehiculos"
-          className="mt-4 block rounded-md border border-marca py-2.5 text-center text-sm font-semibold text-marca-claro hover:bg-marca/10"
-        >
-          Ver detalles
-        </Link>
+        <p className="text-lg font-bold text-marca-claro">{dinero(v.price)}</p>
+        <div className="flex gap-2 pt-1">
+          <Link
+            to={`/vehiculos/${v.id}`}
+            className="flex-1 rounded-lg bg-marca px-3 py-2 text-center text-sm font-medium text-white hover:bg-marca-oscuro"
+          >
+            Ver detalle
+          </Link>
+          {v.testDrive && v.status === 'Disponible' && (
+            <Link
+              to={`/prueba-de-conduccion?vehiculo=${v.id}`}
+              className="flex-1 rounded-lg border border-borde px-3 py-2 text-center text-sm text-texto hover:bg-borde"
+            >
+              Probar en casa
+            </Link>
+          )}
+        </div>
       </div>
     </article>
   )
