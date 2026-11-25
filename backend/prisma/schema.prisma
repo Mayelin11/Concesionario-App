@@ -25,4 +25,19 @@ model Vehiculo {
   descripcion     String
   pruebaDomicilio Boolean  @default(false)
   createdAt       DateTime @default(now())
+  solicitudes SolicitudPrueba[]
+}
+
+model SolicitudPrueba {
+  id         Int      @id @default(autoincrement())
+  vehiculoId Int
+  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [id])
+  fecha      String
+  hora       String
+  lugar      String
+  direccion  String
+  nombre     String
+  telefono   String
+  estado     String   @default("Pendiente de confirmación")
+  createdAt  DateTime @default(now())
 }
