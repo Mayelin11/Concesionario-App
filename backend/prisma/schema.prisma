@@ -41,3 +41,15 @@ model SolicitudPrueba {
   estado     String   @default("Pendiente de confirmación")
   createdAt  DateTime @default(now())
 }
+
+model Usuario {
+  id                  Int       @id @default(autoincrement())
+  nombre              String
+  correo              String    @unique
+  password            String
+  rol                 String    @default("cliente")
+  aceptaDatos         Boolean   @default(false)
+  fechaConsentimiento DateTime?
+  activo              Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+}

@@ -1,10 +1,12 @@
-
+require('dotenv').config({ quiet: true })
 
 const path = require('path')
 const express = require('express')
 const cors = require('cors')
+const bcrypt = require('bcryptjs')
 const { PrismaClient } = require('@prisma/client')
 const { z } = require('zod')
+const { firmarToken, autenticar, soloRoles } = require('./auth')
 
 const prisma = new PrismaClient()
 const app = express()
@@ -255,6 +257,76 @@ app.post('/pruebas-conduccion', async (req, res) => {
       error: 'Error interno del servidor',
     })
   }
+})
+
+// ---------- Usuarios: registro e inicio de sesión ----------
+
+const esquemaRegistro = z.object({
+  nombre: z.string().trim().min(3, 'El nombre es muy corto'),
+  correo: z.string().trim().toLowerCase().email('Correo no válido'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  aceptaDatos: z.literal(true, { message: 'Debes aceptar el tratamiento de tus datos personales' }),
+})
+
+const esquemaLogin = z.object({
+  correo: z.string().trim().toLowerCase().email('Correo no válido'),
+  password: z.string().min(1, 'Escribe tu contraseña'),
+})
+
+// Datos del usuario que sí se pueden enviar al navegador (nunca la contraseña).
+const usuarioPublico = (u) => ({ id: u.id, nombre: u.nombre, correo: u.correo, rol: u.rol })
+
+// POST /auth/registro -> crea una cuenta de cliente
+app.post('/auth/registro', async (req, res) => {
+  const r = esquemaRegistro.safeParse(req.body)
+  if (!r.success) return res.status(400).json({ error: r.error.issues[0].message })
+  const { nombre, correo, password } = r.data
+
+  try {
+    const existe = await prisma.usuario.findUnique({ where: { correo } })
+    if (existe) return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' })
+
+    const usuario = await prisma.usuario.create({
+      data: {
+        nombre,
+        correo,
+        password: await bcrypt.hash(password, 10),
+        rol: 'cliente',
+        aceptaDatos: true,
+        fechaConsentimiento: new Date(),
+      },
+    })
+    res.status(201).json({ token: firmarToken(usuario), usuario: usuarioPublico(usuario) })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'No se pudo crear la cuenta' })
+  }
+})
+
+// POST /auth/login -> devuelve un token si el correo y la contraseña son correctos
+app.post('/auth/login', async (req, res) => {
+  const r = esquemaLogin.safeParse(req.body)
+  if (!r.success) return res.status(400).json({ error: r.error.issues[0].message })
+  const { correo, password } = r.data
+
+  try {
+    const usuario = await prisma.usuario.findUnique({ where: { correo } })
+    const valido = usuario && (await bcrypt.compare(password, usuario.password))
+    if (!valido) return res.status(401).json({ error: 'Correo o contraseña incorrectos' })
+    if (!usuario.activo) return res.status(403).json({ error: 'Esta cuenta está desactivada' })
+
+    res.json({ token: firmarToken(usuario), usuario: usuarioPublico(usuario) })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'No se pudo iniciar sesión' })
+  }
+})
+
+// GET /auth/yo -> datos del usuario que tiene la sesión abierta
+app.get('/auth/yo', autenticar, async (req, res) => {
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.usuario.id } })
+  if (!usuario) return res.status(401).json({ error: 'Usuario no encontrado' })
+  res.json(usuarioPublico(usuario))
 })
 
 // Ruta para manejar direcciones inexistentes
