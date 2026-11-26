@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Campo, { claseInput } from '../components/Campo'
 import { esPersonal, useAuthStore } from '../store/useAuthStore'
+import { MODO_DEMO } from '../services/api'
 
 export default function Login() {
   const navegar = useNavigate()
@@ -61,6 +62,15 @@ export default function Login() {
             Regístrate
           </Link>
         </p>
+
+        {MODO_DEMO && (
+          <div className="rounded-lg border border-borde bg-superficie p-4 text-sm text-suave">
+            <p className="mb-2 font-semibold text-texto">Versión de demostración</p>
+            <p>Personal: <strong>vendedor@autoplaza.do</strong> o <strong>admin@autoplaza.do</strong></p>
+            <p>Contraseña: <strong>Cambiar123!</strong></p>
+            <p className="mt-2">También puedes crear tu propia cuenta de cliente en Regístrate.</p>
+          </div>
+        )}
       </form>
     </section>
   )
